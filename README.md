@@ -1,1 +1,1 @@
-# ming-yin-borad
+# ming-yin-board
