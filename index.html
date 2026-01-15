@@ -4,155 +4,65 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>溟与茵的留言板</title>
+
   <style>
-    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
-      max-width:920px;margin:28px auto;padding:0 16px;line-height:1.6;color:#111;}
-    h1{margin:0 0 6px;}
-    .muted{color:#666;font-size:13px;}
-    .card{border:1px solid #e8e8e8;border-radius:14px;padding:14px;margin:14px 0;}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
-    button{padding:10px 12px;border:0;border-radius:10px;cursor:pointer;font-size:14px;background:#111;color:#fff;}
-    .btn2{background:#f3f3f3;color:#111;border:1px solid #e5e5e5;}
-    .ok{background:#e8f5e9;border:1px solid #b7e0c2;color:#145a2a;}
-    .warn{background:#fff8e1;border:1px solid #f0d27a;color:#6b4e00;}
-    .err{background:#ffebee;border:1px solid #f2b8c2;color:#8a1025;}
-    code{background:#f6f6f6;padding:2px 6px;border-radius:6px;}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;}
-    #diag pre{margin:8px 0 0;white-space:pre-wrap;word-break:break-word;}
-    .space{height:6px;}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",
+                   "PingFang SC","Microsoft YaHei",Arial,sans-serif;
+      max-width:880px;margin:40px auto;padding:0 16px;
+      line-height:1.7;color:#111;background:#fff;
+    }
+    h1{margin-bottom:6px;}
+    .desc{color:#666;font-size:14px;margin-bottom:22px;}
+    .card{
+      border:1px solid #eaeaea;border-radius:14px;
+      padding:18px;background:#fafafa;margin-bottom:18px;
+    }
+    .hint{
+      font-size:13px;color:#444;line-height:1.6;
+    }
+    .hint span{
+      background:#f0f0f0;padding:2px 6px;border-radius:6px;
+      font-family:monospace;
+    }
+    .footer{
+      margin-top:40px;font-size:12px;color:#999;text-align:center;
+    }
   </style>
 </head>
+
 <body>
-  <h1>溟与茵的留言板</h1>
-  <div class="muted">如果下方留言区不显示，请点“自检”按钮，页面会直接告诉你原因。</div>
 
-  <div class="card">
-    <div class="row">
-      <button id="btnCheck">自检留言功能</button>
-      <button id="btnReload" class="btn2">强制刷新页面</button>
-    </div>
-    <div class="space"></div>
-    <div id="diag" class="muted">等待自检…</div>
-  </div>
+<h1>溟与茵的留言板</h1>
 
-  <div class="card">
-    <div class="muted">留言区（如果正常，会出现评论框 / Login 提示）：</div>
-    <div id="comments"></div>
-  </div>
+<div class="desc">
+  山海之间，字句可抵岁月。<br>
+  所有留言将被温柔保存。
+</div>
 
-<script>
-/** ========= 你只需要改这两行 ========= **/
-const REPO = "niynehc/ming-yin-board"; // 必须与 GitHub 仓库一致（注意 board/borad）
-const SITE_URL = "https://niynehc.github.io/ming-yin-board/"; // 你的 Pages 真实地址
-/** =================================== **/
+<div class="card hint">
+  <strong>留言说明：</strong><br>
+  • 支持 Emoji 与 Markdown（如 😀 ❤️ 🌙 或 <span>:heart:</span>）<br>
+  • 留言会自动显示时间<br>
+  • 需要 GitHub 登录（用于防垃圾）<br>
+  • 留言由站点管理员统一管理与删除
+</div>
 
-const diag = (type, title, detail) => {
-  const cls = type === "ok" ? "ok" : type === "warn" ? "warn" : "err";
-  document.getElementById("diag").innerHTML =
-    `<div class="${cls} card" style="margin:10px 0;padding:12px;">
-      <div><b>${title}</b></div>
-      ${detail ? `<pre class="mono">${detail}</pre>` : ""}
-    </div>`;
-};
+<div class="card">
+  <!-- utterances 留言区 -->
+  <script src="https://utteranc.es/client.js"
+    repo="niynehc/ming-yin-board"
+    issue-term="pathname"
+    label="溟与茵的留言"
+    theme="github-light"
+    crossorigin="anonymous"
+    async>
+  </script>
+</div>
 
-function hardReload(){
-  // 强制刷新：加时间戳避免缓存
-  const url = new URL(window.location.href);
-  url.searchParams.set("_", Date.now().toString());
-  window.location.replace(url.toString());
-}
+<div class="footer">
+  © 溟与茵 · 留言会被时间轻轻收好
+</div>
 
-document.getElementById("btnReload").onclick = hardReload;
-
-function loadUtterances(){
-  // 清空旧内容
-  const mount = document.getElementById("comments");
-  mount.innerHTML = "";
-
-  const s = document.createElement("script");
-  s.src = "https://utteranc.es/client.js";
-  s.async = true;
-  s.crossOrigin = "anonymous";
-  s.setAttribute("repo", REPO);
-  s.setAttribute("issue-term", "pathname");
-  s.setAttribute("theme", "github-light");
-
-  // 若脚本加载失败（被拦截/网络问题），onerror 会触发
-  s.onerror = () => {
-    diag("err",
-      "❌ utterances 脚本加载失败（浏览器拦截/网络无法访问）",
-      "请尝试：\n1) 换网络/开全局代理（utteranc.es 有时会被网络策略拦截）\n2) 用手机 4G/5G 访问测试\n3) 关闭浏览器广告拦截插件\n4) 用无痕窗口打开\n\n如果你在公司/医院网络，常见会拦截第三方脚本。");
-  };
-
-  // onload 只是脚本下载完成，不代表 repo 授权正确；我们再检测 iframe 是否出现
-  s.onload = () => {
-    setTimeout(() => {
-      const iframe = mount.querySelector("iframe.utterances-frame");
-      if (iframe) {
-        diag("ok", "✅ 留言功能已加载成功", `仓库：${REPO}\n页面：${window.location.pathname}`);
-      } else {
-        diag("warn",
-          "⚠️ 脚本已加载，但留言 iframe 没出现",
-          "最常见原因：\n1) utterances 没有安装/没有授权到这个仓库\n2) 仓库未开启 Issues\n3) 仓库不是 Public\n4) repo 写错（大小写/拼写）\n\n请按下方“自检结果清单”逐条核对。");
-      }
-    }, 1200);
-  };
-
-  mount.appendChild(s);
-}
-
-async function checkRepoBasics(){
-  // 用 GitHub 公共 API 检查：仓库是否存在、是否 public、issues 是否开启
-  // 不需要 token；若 API 被限流也会提示
-  const [owner, repo] = REPO.split("/");
-  if(!owner || !repo){
-    diag("err","❌ REPO 格式不对","REPO 必须长这样：用户名/仓库名，例如：niynehc/ming-yin-board");
-    return;
-  }
-
-  try{
-    const api = `https://api.github.com/repos/${owner}/${repo}`;
-    const res = await fetch(api, { headers: { "Accept":"application/vnd.github+json" } });
-    if(res.status === 404){
-      diag("err","❌ GitHub 找不到这个仓库（repo 拼写错误）",
-        `访问不到：${api}\n请检查：\n- 用户名是否正确：${owner}\n- 仓库名是否正确：${repo}\n\n重点：board vs borad`);
-      return;
-    }
-    if(res.status === 403){
-      diag("warn","⚠️ GitHub API 被限制/需要稍后重试",
-        "可能是你短时间请求太多或网络限制。\n你可以：\n- 等 1 分钟再点自检\n- 换网络/用手机流量测试\n\n先继续尝试加载留言区。");
-      loadUtterances();
-      return;
-    }
-    const data = await res.json();
-    const isPrivate = !!data.private;
-    const hasIssues = !!data.has_issues;
-
-    let d = `仓库存在：✅\nPublic：${isPrivate ? "❌(private)" : "✅(public)"}\nIssues：${hasIssues ? "✅(enabled)" : "❌(disabled)"}\n仓库URL：${data.html_url || ""}`;
-    if(isPrivate){
-      diag("err","❌ 仓库是 Private（必须改为 Public）", d + "\n\n请到仓库 Settings → General → Danger Zone → Change visibility → Public");
-      return;
-    }
-    if(!hasIssues){
-      diag("err","❌ 仓库未开启 Issues（必须开启）", d + "\n\n请到仓库 Settings → General → Features → 勾选 Issues");
-      return;
-    }
-
-    // 基础通过，再加载 utterances
-    diag("ok","✅ 仓库基础条件通过，正在加载留言区…", d);
-    loadUtterances();
-
-  }catch(e){
-    diag("warn","⚠️ 无法访问 GitHub API（网络限制）",
-      "你的网络可能无法访问 api.github.com。\n请：\n1) 换网络/手机流量测试\n2) 若在单位网络，可能被限制\n\n我仍会尝试加载留言区。");
-    loadUtterances();
-  }
-}
-
-document.getElementById("btnCheck").onclick = checkRepoBasics;
-
-// 页面加载先尝试一次
-checkRepoBasics();
-</script>
 </body>
 </html>
